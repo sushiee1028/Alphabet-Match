@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sushie Sensei's Alphabet Game: Uppercase vs. Lowercase</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap');
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e0f7fa;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .game-container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #00796b;
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+        .game-subtitle {
+            color: #004d40;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        #score-display {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #004d40;
+            margin-bottom: 20px;
+        }
+        #letter-display {
+            font-size: 8em;
+            font-weight: bold;
+            color: #004d40;
+            margin: 20px 0;
+            min-height: 1.5em;
+        }
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .letter-button {
+            padding: 20px 40px;
+            font-size: 2em;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            color: #fff;
+            background-color: #26a69a;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 0 #00695c;
+        }
+        .letter-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #00695c;
+        }
+        .mode-button {
+            padding: 20px 40px;
+            font-size: 2em;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            color: #fff;
+            background-color: #26a69a;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 0 #00695c;
+            margin-top: 20px;
+        }
+        .mode-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #00695c;
+        }
+        #message {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+            min-height: 2em;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #26a69a;
+            animation: spin 1s ease infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .correct {
+            border-color: #4CAF50 !important;
+            box-shadow: 0 4px 0 #2e7d32;
+        }
+        .incorrect {
+            border-color: #f44336 !important;
+            box-shadow: 0 4px 0 #d32f2f;
+        }
+        .start-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .credit {
+            margin-top: 30px;
+            color: #777;
+            font-size: 0.9em;
+        }
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 20px;
+            }
+            .buttons-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Sushie Sensei's Alphabet Game</h1>
+        <p class="game-subtitle">Find the Matching Letter</p>
+        <div id="start-screen" class="start-container">
+            <p style="font-size: 1.2em; color: #555;">Choose your practice mode:</p>
+            <div class="buttons-container">
+                <button id="uppercase-mode" class="mode-button">Uppercase</button>
+                <button id="lowercase-mode" class="mode-button">Lowercase</button>
+            </div>
+        </div>
+        <div id="game-screen" style="display: none;">
+            <div id="score-display"></div>
+            <div id="letter-display"></div>
+            <div class="buttons-container" id="buttons"></div>
+            <div id="message"></div>
+        </div>
+        <p class="credit">by Ms. Shiella</p>
+    </div>
+
+    <script>
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+        const totalRounds = 15;
+        let currentLetter;
+        let practiceMode;
+        let score = 0;
+        let roundsPlayed = 0;
+        
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const letterDisplay = document.getElementById('letter-display');
+        const buttonsContainer = document.getElementById('buttons');
+        const messageDisplay = document.getElementById('message');
+        const scoreDisplay = document.getElementById('score-display');
+        const uppercaseModeButton = document.getElementById('uppercase-mode');
+        const lowercaseModeButton = document.getElementById('lowercase-mode');
+        
+        uppercaseModeButton.addEventListener('click', () => startGame('uppercase'));
+        lowercaseModeButton.addEventListener('click', () => startGame('lowercase'));
+
+        function startGame(mode) {
+            practiceMode = mode;
+            score = 0;
+            roundsPlayed = 0;
+            updateScoreDisplay();
+            startScreen.style.display = 'none';
+            gameScreen.style.display = 'flex';
+            generateNewRound();
+        }
+
+        // Updates the score display.
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = `Score: ${score} / ${totalRounds}`;
+        }
+
+        // Shuffles an array randomly.
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Generates a new round.
+        function generateNewRound() {
+            messageDisplay.textContent = '';
+            buttonsContainer.innerHTML = '';
+            
+            // Pick a random letter from the alphabet.
+            currentLetter = letters[Math.floor(Math.random() * letters.length)];
+            
+            let displayedCase;
+            let correctCase;
+            
+            if (practiceMode === 'uppercase') {
+                displayedCase = currentLetter.toLowerCase();
+                correctCase = currentLetter.toUpperCase();
+            } else { // 'lowercase'
+                displayedCase = currentLetter.toUpperCase();
+                correctCase = currentLetter.toLowerCase();
+            }
+            
+            letterDisplay.textContent = displayedCase;
+
+            // Get a list of possible letters, including the correct one.
+            const options = [correctCase];
+            const otherLetters = letters.filter(l => l !== correctCase.toUpperCase());
+            
+            // Add one random incorrect letter.
+            const incorrectLetter = otherLetters[Math.floor(Math.random() * otherLetters.length)];
+            const incorrectCase = (practiceMode === 'uppercase') ? incorrectLetter.toUpperCase() : incorrectLetter.toLowerCase();
+            options.push(incorrectCase);
+            
+            // Shuffle the options for the buttons.
+            shuffleArray(options);
+
+            // Create buttons for each option.
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = 'letter-button';
+                button.addEventListener('click', () => handleButtonClick(option, correctCase));
+                buttonsContainer.appendChild(button);
+            });
+        }
+
+        // Handles a button click event.
+        function handleButtonClick(selectedCase, correctCase) {
+            // Disable all buttons.
+            document.querySelectorAll('.letter-button').forEach(btn => btn.disabled = true);
+            
+            const selectedButton = Array.from(buttonsContainer.children).find(btn => btn.textContent === selectedCase);
+
+            if (selectedCase === correctCase) {
+                messageDisplay.textContent = "That's correct!";
+                messageDisplay.style.color = '#4CAF50';
+                selectedButton.classList.add('correct');
+                score++;
+                roundsPlayed++;
+                updateScoreDisplay();
+                
+                if (roundsPlayed < totalRounds) {
+                    addNextRoundButton();
+                } else {
+                    endGame();
+                }
+
+            } else {
+                messageDisplay.textContent = "Not quite. Try again!";
+                messageDisplay.style.color = '#f44336';
+                selectedButton.classList.add('incorrect');
+                
+                // Highlight the correct answer.
+                const correctButton = Array.from(buttonsContainer.children).find(btn => btn.textContent === correctCase);
+                correctButton.classList.add('correct');
+
+                setTimeout(() => {
+                    generateNewRound();
+                }, 2000);
+            }
+        }
+        
+        function addNextRoundButton() {
+            buttonsContainer.innerHTML = '';
+
+            const nextRoundButton = document.createElement('button');
+            nextRoundButton.textContent = "Next Round";
+            nextRoundButton.className = 'mode-button';
+            nextRoundButton.addEventListener('click', generateNewRound);
+            buttonsContainer.appendChild(nextRoundButton);
+        }
+
+        function endGame() {
+            buttonsContainer.innerHTML = '';
+            letterDisplay.textContent = '';
+            messageDisplay.textContent = `Game Over! You got ${score} out of ${totalRounds} correct.`;
+            messageDisplay.style.color = '#004d40';
+
+            const playAgainButton = document.createElement('button');
+            playAgainButton.textContent = "Play Again";
+            playAgainButton.className = 'mode-button';
+            playAgainButton.addEventListener('click', resetGame);
+            buttonsContainer.appendChild(playAgainButton);
+        }
+
+        function resetGame() {
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>
